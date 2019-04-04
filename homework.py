@@ -6,28 +6,23 @@ Created on Mon Apr  1 17:59:39 2019
 @author: vhais
 """
 from argparse import ArgumentParser
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+#import nltk
 
-def getLowestIndex(array):
-    low = float("inf")
-    index = 0
-    for i in range(0, len(array)):
-        if (low < i[0]):
-            low = i[0]
-            index = i
-    return index
-    
 
+"""
 def sharedWords(input, output, query):
-    result = []
     for line in input:
-        if (len(result) < 10):
-            result.append([line.count(query), line])
-            continue
-        occurences = line.count(query)
-        if (occurences > result[getLowestIndex(result)][0]):
-            result[getLowestIndex(result)] = [occurences, line]
+        tokens = nltk.word_tokenize(line)
+        vectorize(line)
+        break
+"""
+def fileToArray(text):
+    result = []
+    for line in text:        
+        result.append(line)
     return result
-        
 
 parser = ArgumentParser()
 parser.add_argument('-f', '--file', default='input.txt', help="File containing documents.")
@@ -35,10 +30,15 @@ parser.add_argument('-o', '--out', default='output.txt', help="File containing r
 parser.add_argument('query', type=str, help="Query.")
 args = parser.parse_args()
 
-file = open(args.file, 'r')
-output = open(args.out, 'w')
+input1 = open(args.file, encoding="utf-8", errors="ignore")
+output = open(args.out,encoding="utf-8", errors="ignore")
+vectorizer = CountVectorizer()
 
-print(sharedWords(file, output, args.query))
+array = fileToArray(input1)
+array.append(str(args.query))
+X = vectorizer.fit_transform(array)
 
-file.close()
+
+#print(vectorizer.get_feature_names())
+input1.close()
 output.close()
