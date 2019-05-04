@@ -7,18 +7,23 @@ Created on Thu May  2 15:46:41 2019
 """
 
 from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize, sent_tokenize
-from nltk.stem import PorterStemmer
-from nltk.classify import NaiveBayesClassifier
+from nltk.tokenize import word_tokenize
 import string
 import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.naive_bayes import MultinomialNB
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.metrics import confusion_matrix, classification_report
 from nltk import FreqDist
 import spacy
-import re
+
+def twograms(nouns_adj):
+    for i in range(0, len(nouns_adj)):
+        print(nouns_adj[i].pos)
+        if (nouns_adj[i].pos == "NOUN" and i > 0 and nouns_adj[i].pos == "ADJ"):
+            print(nouns_adj[i])
+            print(nouns_adj[i-1])
+            nouns_adj[i] = nouns_adj[i-1] + "_" + nouns_adj[i]
+            print(nouns_adj[i])
+            nouns_adj.pop(i-1)
+            print(nouns_adj[i-1])
+    return nouns_adj
 
 def clean_document(document):
     stopwords_eng = stopwords.words('english')
@@ -28,12 +33,22 @@ def clean_document(document):
     result = [word for word in result if len(word) > 2]
     return result
 
-def lem_document(document, tags=['NOUN', 'ADJ']):
+def lem_document(document, tags=['NOUN']):
     result = []
-    #for sent in document:
     doc = nlp(" ".join(document))
-    result.append([token.lemma_ for token in doc if token.pos_ in tags])
-    return result[0]
+    
+    for token in doc:
+        if token.pos_ in tags:
+            adj = []
+            for adjective in list(token.children):
+                if adjective.pos_ == "ADJ":
+                    adj.append(adjective.lemma_)
+            if (len(adj) > 0):
+                result.append(token.lemma_ + "_" + adj[0])
+            #else:
+            #    result.append(token.lemma_)
+    #result.append([(token.lemma_ + "_" + token.head.text) for token in doc if token.pos_ in tags])
+    return result
 
 def frequent_words(x, terms = 10):
     all_words = ' '.join([text for text in x])
@@ -54,8 +69,13 @@ def unique_brands(data):
 def text_process(texts):
     result = []
     for text in texts:
-        tmp = clean_document(text)
-        result = result + lem_document(tmp)
+        try:
+            tmp = clean_document(text)
+            result = result + lem_document(tmp)
+        except KeyboardInterrupt:
+            exit(1)
+        except:
+            continue
     return result
     
 
@@ -66,7 +86,7 @@ reviews_brands = {}
 for brand in unique_brands(reviews['Brand']):
 
     reviews_brands[brand] = reviews[(reviews['Brand']) == brand]['Reviews']
-nlp = spacy.load('en_core_web_sm', disable=['parser', 'ner'])
+nlp = spacy.load('en_core_web_sm')
 
 for brand in reviews_brands.keys():    
     print(brand + ":")
