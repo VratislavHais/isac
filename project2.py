@@ -15,18 +15,6 @@ import spacy
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.feature_extraction.text import CountVectorizer
 
-def twograms(nouns_adj):
-    for i in range(0, len(nouns_adj)):
-        print(nouns_adj[i].pos)
-        if (nouns_adj[i].pos == "NOUN" and i > 0 and nouns_adj[i].pos == "ADJ"):
-            print(nouns_adj[i])
-            print(nouns_adj[i-1])
-            nouns_adj[i] = nouns_adj[i-1] + "_" + nouns_adj[i]
-            print(nouns_adj[i])
-            nouns_adj.pop(i-1)
-            print(nouns_adj[i-1])
-    return nouns_adj
-
 def clean_document(document):
     stopwords_eng = stopwords.words('english')
     document_tokenized = word_tokenize(document)
@@ -47,9 +35,6 @@ def lem_document(document, tags=['NOUN']):
                     adj.append(adjective.lemma_)
             if (len(adj) > 0):
                 result.append(adj[0] + "_" + token.lemma_)
-            #else:
-            #    result.append(token.lemma_)
-    #result.append([(token.lemma_ + "_" + token.head.text) for token in doc if token.pos_ in tags])
     return result
 
 def format_list(li, terms):
@@ -84,11 +69,8 @@ def frequent_words(x, terms = 30):
             good.append([words_df.at[i, 'count'], words_df.at[i, 'word'].replace(" ", "_")])
         else:
             bad.append([words_df.at[i, 'count'], words_df.at[i, 'word'].replace(" ", "_")])
-        #if (nb.predict(transformer.transform(df['word'])))
-    good = sorted(good, key=lambda x:x[1])
-    bad = sorted(bad, key=lambda x:x[1])
-    
-    #result = words_df.nlargest(columns="count", n = terms)
+    good = sorted(good, key=lambda x:x[0], reverse=True)
+    bad = sorted(bad, key=lambda x:x[0], reverse=True)
     return format_result(good, bad, terms)
 
 def unique_brands(data):
@@ -111,8 +93,10 @@ def text_process(texts):
             continue
     return result
     
-
-reviews = pd.read_csv("Amazon_Unlocked_Mobile_new_test.csv")
+# pandas load the csv file 
+print("Loading data...")
+reviews = pd.read_csv("Amazon_Unlocked_Mobile_new.csv")
+print("Loaded...")
 
 reviews_brands = {}
 
@@ -126,8 +110,9 @@ X = reviews[(reviews['Rating'] == 5) | (reviews['Rating'] == 1)]['Reviews']
 y = reviews[(reviews['Rating'] == 5) | (reviews['Rating'] == 1)]['Rating']
 
 transformer = CountVectorizer(analyzer=clean_document).fit(X)
+print("Learning...")
 nb.fit(transformer.transform(X), y)
-
+print("Done learning...")
 for brand in reviews_brands.keys():    
     print(brand + ":")
     print(frequent_words(text_process(reviews_brands[brand])))
