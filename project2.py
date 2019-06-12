@@ -14,6 +14,8 @@ from nltk import FreqDist
 import spacy
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import confusion_matrix, classification_report
 
 def clean_document(document):
     stopwords_eng = stopwords.words('english')
@@ -95,7 +97,7 @@ def text_process(texts):
     
 # pandas load the csv file 
 print("Loading data...")
-reviews = pd.read_csv("Amazon_Unlocked_Mobile_new.csv")
+reviews = pd.read_csv("Amazon_Unlocked_Mobile_new_test.csv")
 print("Loaded...")
 
 reviews_brands = {}
@@ -110,9 +112,21 @@ X = reviews[(reviews['Rating'] == 5) | (reviews['Rating'] == 1)]['Reviews']
 y = reviews[(reviews['Rating'] == 5) | (reviews['Rating'] == 1)]['Rating']
 
 transformer = CountVectorizer(analyzer=clean_document).fit(X)
+
+test_X, train_X, test_y, train_y = train_test_split(X, y, test_size=0.3, random_state=101)
+train_X = transformer.transform(train_X)
+nb.fit(train_X, train_y)
+test_X = transformer.transform(test_X)
+preds = nb.predict(test_X)
+
+print(confusion_matrix(test_y, preds))
+print('\n')
+print(classification_report(test_y, preds))
+
 print("Learning...")
 nb.fit(transformer.transform(X), y)
 print("Done learning...")
+
 for brand in reviews_brands.keys():    
     print(brand + ":")
     print(frequent_words(text_process(reviews_brands[brand])))
